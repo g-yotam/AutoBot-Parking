@@ -41,24 +41,95 @@ WaitForSafety:
 	OUT    XLEDS       ; LED17 blinks at 2.5Hz (10Hz/4)
 	JUMP   WaitForSafety
 
-WaitForRemote:
-	IN     TIMER       ; We'll blink the LEDs above PB3
-	AND    Mask1
-	SHIFT  5           ; Both LEDG6 and LEDG7
-	STORE  Temp        ; (overkill, but looks nice)
-	SHIFT  1
-	OR     Temp
-	OUT    XLEDS
-	IN     IR_LO
-	XOR	   Remote1
-	JPOS   WaitForRemote
-	JNEG   WaitForRemote
-	OUT	   IR_LO
+ReadRemote:
+;	IN     	TIMER       ; We'll blink the LEDs above PB3
+;	AND    	Mask1
+;	SHIFT  	5           ; Both LEDG6 and LEDG7
+;	STORE  	Temp        ; (overkill, but looks nice)
+;	SHIFT  	1
+;	OR     	Temp
+;	OUT    	XLEDS
+	IN     	IR_LO
+	STORE  	ButtonPressed
+	XOR	   	Remote1
+	JZERO  	Execute1			; 1 is pressed
+	LOAD 	ButtonPressed
+	XOR		Remote2
+	JZERO	Execute2			; 2 is pressed
+	LOAD 	ButtonPressed
+	XOR		Remote3
+	JZERO	Execute3			; 3 is pressed
+	LOAD 	ButtonPressed
+	XOR		Remote4
+	JZERO	Execute4			; 4 is pressed
+	LOAD 	ButtonPressed
+	XOR		Remote5
+	JZERO	Execute5			; 5 is pressed
+	LOAD 	ButtonPressed
+	XOR		Remote6
+	JZERO	Execute6			; 6 is pressed
+	LOAD 	ButtonPressed
+	XOR		Remote7
+	JZERO	Execute7			; 7 is pressed
+	LOAD 	ButtonPressed
+	XOR		Remote8
+	JZERO	Execute8			; 8 is pressed
+	LOAD 	ButtonPressed
+	XOR		Remote9
+	JZERO	Execute9			; 9 is pressed
+	LOAD 	ButtonPressed
+	XOR		Remote0
+	JZERO	Execute0			; 0 is pressed
+	JUMP	EndReadRemote
+
+Execute1:
+	;CALL	something
+	JUMP	EndReadRemote
+Execute2:
+	;CALL	something
+	JUMP	EndReadRemote
+Execute3:
+	;CALL	something
+	JUMP	EndReadRemote
+Execute4:
+	CALL 	TurnLeft
+	JUMP	EndReadRemote
+Execute5:
+	;CALL	something
+	JUMP	EndReadRemote
+Execute6:
+	CALL 	TurnRight
+	JUMP	EndReadRemote
+Execute7:
+	;CALL	something
+	JUMP	EndReadRemote
+Execute8:
+	;CALL	something
+	JUMP	EndReadRemote
+Execute9:
+	;CALL	something
+	JUMP	EndReadRemote
+Execute0:
+	;CALL	something
+	JUMP	EndReadRemote
+
+EndReadRemote:
+	OUT	   	IR_LO
 	RETURN
 
-Remote1:	DW	&H20DF
+Remote1:		DW	&H20DF
+Remote2:		DW	&HA05F
+Remote3:		DW	&H609F
+Remote4:		DW	&HE01F
+Remote5:		DW	&H30CF
+Remote6:		DW	&HB04F
+Remote7:		DW	&H708F
+Remote8:		DW	&HF00F
+Remote9:		DW	&H38C7
+Remote0:		DW	&HB847
+ButtonPressed:	DW	0
 
-TurnLeft:
+TurnLeft
     IN      THETA   ; taking in the current angle of the robot
     ADDI    90      ; we desire to turn 90 degrees to the left
     CALL    Mod360  ; mod'ing the angle by 360 degrees to get appropriate theta
@@ -101,14 +172,9 @@ Main:
 ; and displays them to the 7-segs just to demonstrate how those
 ; values are read.
 
-	CALL WaitForRemote      ; waiting for the remote signal
-    CALL TurnLeft           ; turning left
-    CALL WaitForRemote      ; waiting for the remote signal
-    CALL TurnRight          ; turning right
-    CALL WaitForRemote
-    CALL TurnRight
-    CALL WaitForRemote
-    CALL TurnLeft
+ForeverReadRemote:
+	CALL	ReadRemote
+	JUMP	ForeverReadRemote
 
 ForeverDisp:
 	CALL   IRDisp      ; Display the current IR code
