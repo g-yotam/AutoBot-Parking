@@ -36,42 +36,30 @@ WaitForSafety:
 	; to the SAFETY signal contained in XIO.
 	IN     XIO         ; XIO contains SAFETY signal
 	AND    Mask4       ; SAFETY signal is bit 4
-	JPOS   SafetyPass  ; If ready, jump to SafetyPass
+	JPOS   Main  ; If ready, jump to SafetyPass
 	IN     TIMER       ; We'll use the timer value to
 	AND    Mask1       ;  blink LED17 as a reminder to toggle SW17
 	SHIFT  8           ; Shift over to LED17
 	OUT    XLEDS       ; LED17 blinks at 2.5Hz (10Hz/4)
 	JUMP   WaitForSafety
 
-	
-SafetyPass:
-	OUT    RESETPOS    ; reset odometer in case wheels moved after programming
-
-	; Before enabling the movement control code, set it to
-	; not start moving immediately.
-	LOADI  0
-	STORE  DVel        ; desired forward velocity
-	IN     THETA
-	STORE  DTheta      ; desired heading
-	; configure timer interrupts to enable the movement control code
-	LOADI  10          ; 10ms * 10 = 0.1s rate, or 10Hz.
-	OUT    CTIMER      ; turn on timer peripheral
-	SEI    &B0010      ; enable interrupts from source 2 (timer)
-	; at this point, timer interrupts will be firing at 10Hz, and
-	; code in that ISR will attempt to control the robot.
-	; If you want to take manual control of the robot,
-	; execute a CLI &B0010 to disable the interrupt.
 
 ReadRemote:
-;	IN     	TIMER       ; We'll blink the LEDs above PB3
-;	AND    	Mask1
-;	SHIFT  	5           ; Both LEDG6 and LEDG7
-;	STORE  	Temp        ; (overkill, but looks nice)
-;	SHIFT  	1
-;	OR     	Temp
-;	OUT    	XLEDS
+	;IN     	TIMER       ; We'll blink the LEDs above PB3
+	;AND    	Mask1
+	;SHIFT  	5           ; Both LEDG6 and LEDG7
+	;STORE  	Temp        ; (overkill, but looks nice)
+	;SHIFT  	1
+	;OR     	Temp
+	;OUT    	XLEDS
 	IN     	IR_LO
 	STORE  	ButtonPressed
+	LOAD 	ButtonPressed
+	OUT		SSEG1
+	
+		LOAD 	ButtonPressed
+	OUT SSEG1
+		LOAD 	ButtonPressed
 	XOR	   	Remote1
 	JZERO  	Execute1			; 1 is pressed
 		LOAD 	ButtonPressed
@@ -116,7 +104,7 @@ Execute4:
 			CALL 	TurnLeft
 			JUMP	EndReadRemote
 Execute5:
-	CALL	STOP
+	;CALL	STOP
 	JUMP	EndReadRemote
 Execute6:
 			CALL 	TurnRight
@@ -154,10 +142,30 @@ ButtonPressed:	DW	0
 ;***************************************************************
 ;* Main code
 ;***************************************************************
+Main:
+	OUT    RESETPOS    ; reset odometer in case wheels moved after programming
+
+	; Before enabling the movement control code, set it to
+	; not start moving immediately.
+	LOADI  0
+	STORE  DVel        ; desired forward velocity
+	IN     THETA
+	STORE  DTheta      ; desired heading	; configure timer interrupts to enable the movement control code
+	LOADI  10          ; 10ms * 10 = 0.1s rate, or 10Hz.
+	OUT    CTIMER      ; turn on timer peripheral
+	SEI    &B0010      ; enable interrupts from source 2 (timer)
+	; at this point, timer interrupts will be firing at 10Hz, and
+	; code in that ISR will attempt to control the robot.
+	; If you want to take manual control of the robot,
+	; execute a CLI &B0010 to disable the interrupt.
+	
+ForeverReadRemote:
+	CALL	ReadRemote
+	JUMP	ForeverReadRemote
 
 
 MoveFWD:
-	OUT	   	IR_LO
+	OUT	   	IR_LO	; set IR_LO to zero
 	LOAD   FMid		;load in FWD
 	STORE 	DVel
 	LOAD	XPOS		;load x position
@@ -165,13 +173,12 @@ MoveFWD:
 	LOAD	YPOS		; load in y position
 	OUT		SSEG2		; Show on SSEG second 4
 	
-		LOAD	IR_LO		; load in command 
+		IN	IR_LO		; load in command 
 		XOR		Remote5
 	JPOS 	MoveFWD		; if stop button isnt pressed then loop through MoveFWD
 	JNEG	MoveFWD		
 	LOADI 	0
 	STORE 	DVel
-	OUT    RESETPOS
 	Return
 	;JUMP	WaitForRemote ;if pressed jump to wait for next instruction
 
@@ -180,7 +187,6 @@ TurnLeft:
     ADDI    90      ; we desire to turn 90 degrees to the left
     CALL    Mod360  ; mod'ing the angle by 360 degrees to get appropriate theta
     STORE   DTheta  ; we want the angle to change to this new angle
-    OUT    RESETPOS
     RETURN
 
 TurnRight:
@@ -188,11 +194,10 @@ TurnRight:
     ADDI    -90     ; we desire to turn 90 degrees to the right
     CALL    Mod360  ; mod'ing the angle by 360 degrees to get appropriate theta
     STORE   DTheta  ; we want the angle to change to this new angle
-    OUT    RESETPOS
     RETURN
     
 MoveBWD:
-	OUT		IR_LO
+	OUT		IR_LO	; set IR_LO to zero
 	LOAD    RSlow		;load in BWD
 	STORE 	DVel
 	LOAD	XPOS		;load x position
@@ -200,13 +205,12 @@ MoveBWD:
 	LOAD	YPOS		; load in y position
 	OUT		SSEG2		; Show on SSEG (second 4)
 	
-		LOAD	IR_LO		; load in command 
+		IN	IR_LO		; load in command 
 		XOR			Remote5
 	JPOS 	MoveBWD		; if stop button isnt pressed then loop through MoveFWD
 	JNEG	MoveBWD		
 	LOADI	0
 	STORE	DVel
-	OUT    	RESETPOS
 	Return
 	
 	;JUMP	WaitForRemote ;if pressed jump to wait for next instruction
@@ -227,7 +231,7 @@ PerpPark:
 	LOAD	YPOS		; load in y position
 	OUT		SSEG2		; Show on SSEG (second 4)
 	
-	JUMP WaitForRemote
+	JUMP ReadRemote
 	
 ForeverDisp:
 	CALL   IRDisp      ; Display the current IR code
@@ -823,6 +827,7 @@ LowNibl:  DW &HF       ; 0000 0000 0000 1111
 ; some useful movement values
 OneMeter: DW 961       ; ~1m in 1.04mm units
 HalfMeter: DW 481      ; ~0.5m in 1.04mm units
+QuarterMeter: DW 240   ; ~0.25m
 TwoFeet:  DW 586       ; ~2ft in 1.04mm units
 Deg90:    DW 90        ; 90 degrees in odometer units
 Deg180:   DW 180       ; 180
