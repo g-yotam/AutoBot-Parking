@@ -42,85 +42,86 @@ WaitForSafety:
     JUMP   WaitForSafety
 
 ReadRemote:
-    IN     	IR_LO
-    STORE  	ButtonPressed
-    XOR	   	Remote1
-    JZERO  	Execute1			; 1 is pressed
-    LOAD 	ButtonPressed
-    XOR		Remote2
-    JZERO	Execute2			; 2 is pressed
-    LOAD 	ButtonPressed
-    XOR		Remote3
-    JZERO	Execute3			; 3 is pressed
+    IN      IR_LO
+    OUT     SSEG1
+    STORE   ButtonPressed
+    XOR     Remote1
+    JZERO   Execute1            ; 1 is pressed
     LOAD    ButtonPressed
-    XOR		Remote4
-    JZERO	Execute4			; 4 is pressed
-    LOAD 	ButtonPressed
-    XOR		Remote5
-    JZERO	Execute5			; 5 is pressed
-    LOAD 	ButtonPressed
-    XOR		Remote6
-    JZERO	Execute6			; 6 is pressed
-    LOAD 	ButtonPressed
-    XOR		Remote7
-    JZERO	Execute7			; 7 is pressed
-    LOAD 	ButtonPressed
-    XOR		Remote8
-    JZERO	Execute8			; 8 is pressed
-    LOAD 	ButtonPressed
-    XOR		Remote9
-    JZERO	Execute9			; 9 is pressed
-    LOAD 	ButtonPressed
-    XOR		Remote0
-    JZERO	Execute0			; 0 is pressed
-    JUMP	EndReadRemote
+    XOR     Remote2
+    JZERO   Execute2            ; 2 is pressed
+    LOAD    ButtonPressed
+    XOR     Remote3
+    JZERO   Execute3            ; 3 is pressed
+    LOAD    ButtonPressed
+    XOR     Remote4
+    JZERO   Execute4            ; 4 is pressed
+    LOAD    ButtonPressed
+    XOR     Remote5
+    JZERO   Execute5            ; 5 is pressed
+    LOAD    ButtonPressed
+    XOR     Remote6
+    JZERO   Execute6            ; 6 is pressed
+    LOAD    ButtonPressed
+    XOR     Remote7
+    JZERO   Execute7            ; 7 is pressed
+    LOAD    ButtonPressed
+    XOR     Remote8
+    JZERO   Execute8            ; 8 is pressed
+    LOAD    ButtonPressed
+    XOR     Remote9
+    JZERO   Execute9            ; 9 is pressed
+    LOAD    ButtonPressed
+    XOR     Remote0
+    JZERO   Execute0            ; 0 is pressed
+    JUMP    ReadRemote
 
 Execute1:
-    ;CALL	something
-    JUMP	EndReadRemote
+    ;CALL   something
+    JUMP    EndReadRemote
 Execute2:
-    CALL	MoveFWD
-    JUMP	EndReadRemote
+    CALL    MoveFWD
+    JUMP    EndReadRemote
 Execute3:
-    ;CALL	something
-    JUMP	EndReadRemote
+    ;CALL   something
+    JUMP    EndReadRemote
 Execute4:
-    CALL 	TurnLeft
-    JUMP	EndReadRemote
+    CALL    TurnLeft
+    JUMP    EndReadRemote
 Execute5:
-    CALL	Stop
-    JUMP	EndReadRemote
+    CALL    Stop
+    JUMP    EndReadRemote
 Execute6:
-    CALL 	TurnRight
-    JUMP	EndReadRemote
+    CALL    TurnRight
+    JUMP    EndReadRemote
 Execute7:
-    ;CALL	something
-    JUMP	EndReadRemote
+    ;CALL   something
+    JUMP    EndReadRemote
 Execute8:
-    CALL	MoveBWD
-    JUMP	EndReadRemote
+    CALL    MoveBWD
+    JUMP    EndReadRemote
 Execute9:
-    ;CALL	something
-    JUMP	EndReadRemote
+    ;CALL   something
+    JUMP    EndReadRemote
 Execute0:
-    ;CALL	something
-    JUMP	EndReadRemote
+    ;CALL   something
+    JUMP    EndReadRemote
 
 EndReadRemote:
-    OUT	   	IR_LO
+    OUT     IR_LO
     RETURN
 
-Remote1:		DW	&H20DF
-Remote2:		DW	&HA05F
-Remote3:		DW	&H609F
-Remote4:		DW	&HE01F
-Remote5:		DW	&H30CF
-Remote6:		DW	&HB04F
-Remote7:		DW	&H708F
-Remote8:		DW	&HF00F
-Remote9:		DW	&H38C7
-Remote0:		DW	&HB847
-ButtonPressed:	DW	0
+Remote1:        DW  &H20DF
+Remote2:        DW  &HA05F
+Remote3:        DW  &H609F
+Remote4:        DW  &HE01F
+Remote5:        DW  &H30CF
+Remote6:        DW  &HB04F
+Remote7:        DW  &H708F
+Remote8:        DW  &HF00F
+Remote9:        DW  &H38C7
+Remote0:        DW  &HB847
+ButtonPressed:  DW  0
 
 TurnLeft:
     IN      THETA   ; taking in the current angle of the robot
@@ -137,27 +138,122 @@ TurnRight:
     RETURN
 
 MoveFWD:
-    LOAD    FMid	;load in FWD
+    LOAD    FMid    ;load in FWD
     STORE   DVel
-    IN      XPOS	;load x position
-    OUT     SSEG1	;show on SSEG first 4
-    IN      YPOS	; load in y position
-    OUT	    SSEG2	; Show on SSEG second 4
+    IN      XPOS    ;load x position
+    OUT     SSEG1   ;show on SSEG first 4
+    IN      YPOS    ; load in y position
+    OUT     SSEG2   ; Show on SSEG second 4
     RETURN
 
 MoveBWD:
-    LOAD    RSlow		;load in BWD
-    STORE 	DVel
-    IN	    XPOS		;load x position
-    OUT 	SSEG1		;show on SSEG (first 4)
-    IN	    YPOS		; load in y position
-    OUT		SSEG2		; Show on SSEG (second 4)
+    LOAD    RSlow       ;load in BWD
+    STORE   DVel
+    IN      XPOS        ;load x position
+    OUT     SSEG1       ;show on SSEG (first 4)
+    IN      YPOS        ; load in y position
+    OUT     SSEG2       ; Show on SSEG (second 4)
     RETURN
 
 Stop:
     LOADI   0
     STORE   DVel    ; setting velocity to 0 to stop the robot
     RETURN
+
+;*************************************************************
+; Automatic Perpendicular Parking Algorithm
+;       Completely autonomous parking from start to finish
+;*************************************************************
+AutomaticParking:
+    IN      IR_LO
+    STORE   SpotSelected
+    XOR     Remote1
+    JZERO   Spot1           ; 1 is pressed
+    LOAD    SpotSelected
+    XOR     Remote2
+    JZERO   Spot2           ; 2 is pressed
+    LOAD    SpotSelected
+    XOR     Remote3
+    JZERO   Spot3           ; 3 is pressed
+    LOAD    SpotSelected
+    XOR     Remote4
+    JZERO   Spot4           ; 4 is pressed
+    LOAD    SpotSelected
+    XOR     Remote5
+    JZERO   Spot5           ; 5 is pressed
+    LOAD    SpotSelected
+    XOR     Remote6
+    JZERO   Spot6           ; 6 is pressed
+    LOAD    SpotSelected
+    XOR     Remote7
+    JZERO   Spot7           ; 7 is pressed
+    JUMP    AutomaticParking
+
+    SpotSelected:   DW  0
+
+Spot1:
+    LOAD    One
+    STORE   SpotSelected    ; storing value of 1 into SpotSelected
+    JUMP    AutomaticManeuver
+Spot2:
+    LOAD    Two
+    STORE   SpotSelected    ; storing value of 2 into SpotSelected
+    JUMP    AutomaticManeuver
+Spot3:
+    LOAD    Three
+    STORE   SpotSelected    ; storing value of 3 into SpotSelected
+    JUMP    AutomaticManeuver
+Spot4:
+    LOAD    Four
+    STORE   SpotSelected    ; storing value of 4 into SpotSelected
+    JUMP    AutomaticManeuver
+Spot5:
+    LOAD    Five
+    STORE   SpotSelected    ; storing value of 5 into SpotSelected
+    JUMP    AutomaticManeuver
+Spot6:
+    LOAD    Six
+    STORE   SpotSelected    ; storing value of 6 into SpotSelected
+    JUMP    AutomaticManeuver
+Spot7:
+    LOAD    Seven
+    STORE   SpotSelected    ; storing value of 7 into SpotSelected
+    JUMP    AutomaticManeuver
+
+AutomaticManeuver:
+    OUT     RESETPOS    ; resetting the position of the robot
+    CALL    MoveFWD     ; moving forward
+    
+CheckTurn1:
+    IN      XPos        ; reading in the position of the robot
+    OUT     SSEG1       ; outputting XPos to SSEG1 for debugging
+    ADDI    -529        ; checking to see if it has gone 55 cm yet
+    JPOS    Turn1       ; if we have travelled 55cm, we are ready to turn
+    JUMP    CheckTurn1  ; else, keep checking the distance travelled
+    
+Turn1:
+    CALL    Stop        ; stopping the robot
+    CALL    TurnRight   ; turning the robot 90 degrees to the right
+    
+    CALL    MoveFWD     ; moving forward
+    
+CheckTurn2:
+    IN      YPos        ; reading in the position of the robot
+    OUT     SSEG2       ; outputting YPos to SSEG2 for debugging
+    ADDI    1010        ; checking to see if it has gone 105 cm yet (in the negative y direction)
+    JNEG    Turn2       ; if we have travelled 1010cm, we are ready to turn
+    JUMP    CheckTurn2  ; else, keep checking the distance travelled
+
+Turn2:
+    CALL    Stop        ; stopping the robot
+    CALL    TurnLeft    ; turning the robot 90 degrees to the left
+    
+    CALL    MoveFWD     ; moving forward
+
+CheckStopPoint:
+    IN      XPos        ; reading in the position of the robot
+    OUT     SSEG1       ; outputting XPos to SSEG1 for debugging
+    
 
 ;***************************************************************
 ;* Main code
@@ -189,8 +285,8 @@ Main:
 ; values are read.
 
 ForeverReadRemote:
-    CALL	ReadRemote
-    JUMP	ForeverReadRemote
+    CALL    ReadRemote
+    JUMP    ForeverReadRemote
 
 ForeverDisp:
     CALL   IRDisp      ; Display the current IR code
@@ -201,7 +297,7 @@ IRDisp:
     OUT    SSEG1
     IN     IR_LO       ; get the low word
     OUT    SSEG2
-;	OUT    IR_HI       ; this would reset the value to 0
+;   OUT    IR_HI       ; this would reset the value to 0
     RETURN
 
 Die:
