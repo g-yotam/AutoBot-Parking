@@ -104,7 +104,7 @@ Execute9:
     ;CALL   something
     JUMP    EndReadRemote
 Execute0:
-    ;CALL   something
+    CALL 	AutomaticParking
     JUMP    EndReadRemote
 
 EndReadRemote:
@@ -128,6 +128,7 @@ TurnLeft:
     ADDI    90      ; we desire to turn 90 degrees to the left
     CALL    Mod360  ; mod'ing the angle by 360 degrees to get appropriate theta
     STORE   DTheta  ; we want the angle to change to this new angle
+    CALL	TestAngle
     RETURN
 
 TurnRight:
@@ -135,6 +136,14 @@ TurnRight:
     ADDI    -90     ; we desire to turn 90 degrees to the right
     CALL    Mod360  ; mod'ing the angle by 360 degrees to get appropriate theta
     STORE   DTheta  ; we want the angle to change to this new angle
+    CALL	TestAngle
+    RETURN
+
+TestAngle:
+	; wait for robot to turn completely to the desired angle
+	CALL	GetThetaErr
+    CALL	Abs
+    JPOS	TestAngle
     RETURN
 
 MoveFWD:
@@ -221,39 +230,43 @@ Spot7:
     JUMP    AutomaticManeuver
 
 AutomaticManeuver:
+	LOAD	SpotSelected
+	OUT		LCD			; showing spot selected on the LCD screen
     OUT     RESETPOS    ; resetting the position of the robot
     CALL    MoveFWD     ; moving forward
-    
+
 CheckTurn1:
     IN      XPos        ; reading in the position of the robot
     OUT     SSEG1       ; outputting XPos to SSEG1 for debugging
-    ADDI    -529        ; checking to see if it has gone 55 cm yet
+    ADDI    -510        ; checking to see if it has gone 55 cm yet
     JPOS    Turn1       ; if we have travelled 55cm, we are ready to turn
     JUMP    CheckTurn1  ; else, keep checking the distance travelled
-    
+
 Turn1:
     CALL    Stop        ; stopping the robot
     CALL    TurnRight   ; turning the robot 90 degrees to the right
-    
+
     CALL    MoveFWD     ; moving forward
-    
+
 CheckTurn2:
     IN      YPos        ; reading in the position of the robot
     OUT     SSEG2       ; outputting YPos to SSEG2 for debugging
-    ADDI    1010        ; checking to see if it has gone 105 cm yet (in the negative y direction)
+    ADDI    950	        ; checking to see if it has gone 105 cm yet (in the negative y direction)
     JNEG    Turn2       ; if we have travelled 1010cm, we are ready to turn
     JUMP    CheckTurn2  ; else, keep checking the distance travelled
 
 Turn2:
     CALL    Stop        ; stopping the robot
     CALL    TurnLeft    ; turning the robot 90 degrees to the left
-    
+
     CALL    MoveFWD     ; moving forward
 
 CheckStopPoint:
     IN      XPos        ; reading in the position of the robot
     OUT     SSEG1       ; outputting XPos to SSEG1 for debugging
-    
+
+	RETURN
+
 
 ;***************************************************************
 ;* Main code
