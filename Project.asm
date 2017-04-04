@@ -6,110 +6,110 @@
 
 ; This code uses the timer interrupt for the control code.
 ORG 0                  ; Jump table is located in mem 0-4
-    JUMP   Init        ; Reset vector
-    RETI               ; Sonar interrupt (unused)
-    JUMP   CTimer_ISR  ; Timer interrupt
-    RETI               ; UART interrupt (unused)
-    RETI               ; Motor stall interrupt (unused)
+JUMP   Init        ; Reset vector
+RETI               ; Sonar interrupt (unused)
+JUMP   CTimer_ISR  ; Timer interrupt
+RETI               ; UART interrupt (unused)
+RETI               ; Motor stall interrupt (unused)
 
 ;***************************************************************
 ;* Initialization
 ;***************************************************************
 Init:
-    ; Always a good idea to make sure the robot
-    ; stops in the event of a reset.
-    LOAD   Zero
-    OUT    LVELCMD     ; Stop motors
-    OUT    RVELCMD
-    OUT    SONAREN     ; Disable sonar (optional)
-    OUT    BEEP        ; Stop any beeping (optional)
+; Always a good idea to make sure the robot
+; stops in the event of a reset.
+LOAD   Zero
+OUT    LVELCMD     ; Stop motors
+OUT    RVELCMD
+OUT    SONAREN     ; Disable sonar (optional)
+OUT    BEEP        ; Stop any beeping (optional)
 
-    CALL   SetupI2C    ; Configure the I2C to read the battery voltage
-    CALL   BattCheck   ; Get battery voltage (and end if too low).
-    OUT    LCD         ; Display battery voltage (hex, tenths of volts)
+CALL   SetupI2C    ; Configure the I2C to read the battery voltage
+CALL   BattCheck   ; Get battery voltage (and end if too low).
+OUT    LCD         ; Display battery voltage (hex, tenths of volts)
 
 WaitForSafety:
-    ; This loop will wait for the user to toggle SW17.  Note that
-    ; SCOMP does not have direct access to SW17; it only has access
-    ; to the SAFETY signal contained in XIO.
-    IN     XIO         ; XIO contains SAFETY signal
-    AND    Mask4       ; SAFETY signal is bit 4
-    JPOS   Main        ; If ready, jump to Main
-    IN     TIMER       ; We'll use the timer value to
-    AND    Mask1       ;  blink LED17 as a reminder to toggle SW17
-    SHIFT  8           ; Shift over to LED17
-    OUT    XLEDS       ; LED17 blinks at 2.5Hz (10Hz/4)
-    JUMP   WaitForSafety
+; This loop will wait for the user to toggle SW17.  Note that
+; SCOMP does not have direct access to SW17; it only has access
+; to the SAFETY signal contained in XIO.
+IN     XIO         ; XIO contains SAFETY signal
+AND    Mask4       ; SAFETY signal is bit 4
+JPOS   Main        ; If ready, jump to Main
+IN     TIMER       ; We'll use the timer value to
+AND    Mask1       ;  blink LED17 as a reminder to toggle SW17
+SHIFT  8           ; Shift over to LED17
+OUT    XLEDS       ; LED17 blinks at 2.5Hz (10Hz/4)
+JUMP   WaitForSafety
 
 ReadRemote:
-    IN      IR_LO
-    OUT     SSEG1
-    STORE   ButtonPressed
-    XOR     Remote1
-    JZERO   Execute1            ; 1 is pressed
-    LOAD    ButtonPressed
-    XOR     Remote2
-    JZERO   Execute2            ; 2 is pressed
-    LOAD    ButtonPressed
-    XOR     Remote3
-    JZERO   Execute3            ; 3 is pressed
-    LOAD    ButtonPressed
-    XOR     Remote4
-    JZERO   Execute4            ; 4 is pressed
-    LOAD    ButtonPressed
-    XOR     Remote5
-    JZERO   Execute5            ; 5 is pressed
-    LOAD    ButtonPressed
-    XOR     Remote6
-    JZERO   Execute6            ; 6 is pressed
-    LOAD    ButtonPressed
-    XOR     Remote7
-    JZERO   Execute7            ; 7 is pressed
-    LOAD    ButtonPressed
-    XOR     Remote8
-    JZERO   Execute8            ; 8 is pressed
-    LOAD    ButtonPressed
-    XOR     Remote9
-    JZERO   Execute9            ; 9 is pressed
-    LOAD    ButtonPressed
-    XOR     Remote0
-    JZERO   Execute0            ; 0 is pressed
-    JUMP    ReadRemote
+IN      IR_LO
+OUT     SSEG1
+STORE   ButtonPressed
+XOR     Remote1
+JZERO   Execute1            ; 1 is pressed
+LOAD    ButtonPressed
+XOR     Remote2
+JZERO   Execute2            ; 2 is pressed
+LOAD    ButtonPressed
+XOR     Remote3
+JZERO   Execute3            ; 3 is pressed
+LOAD    ButtonPressed
+XOR     Remote4
+JZERO   Execute4            ; 4 is pressed
+LOAD    ButtonPressed
+XOR     Remote5
+JZERO   Execute5            ; 5 is pressed
+LOAD    ButtonPressed
+XOR     Remote6
+JZERO   Execute6            ; 6 is pressed
+LOAD    ButtonPressed
+XOR     Remote7
+JZERO   Execute7            ; 7 is pressed
+LOAD    ButtonPressed
+XOR     Remote8
+JZERO   Execute8            ; 8 is pressed
+LOAD    ButtonPressed
+XOR     Remote9
+JZERO   Execute9            ; 9 is pressed
+LOAD    ButtonPressed
+XOR     Remote0
+JZERO   Execute0            ; 0 is pressed
+JUMP    ReadRemote
 
 Execute1:
-    ;CALL   something
-    JUMP    EndReadRemote
+;CALL   something
+JUMP    EndReadRemote
 Execute2:
-    CALL    MoveFWD
-    JUMP    EndReadRemote
+CALL    MoveFWD
+JUMP    EndReadRemote
 Execute3:
-    ;CALL   something
-    JUMP    EndReadRemote
+;CALL   something
+JUMP    EndReadRemote
 Execute4:
-    CALL    TurnLeft
-    JUMP    EndReadRemote
+CALL    TurnLeft
+JUMP    EndReadRemote
 Execute5:
-    CALL    Stop
-    JUMP    EndReadRemote
+CALL    Stop
+JUMP    EndReadRemote
 Execute6:
-    CALL    TurnRight
-    JUMP    EndReadRemote
+CALL    TurnRight
+JUMP    EndReadRemote
 Execute7:
-    ;CALL   something
-    JUMP    EndReadRemote
+;CALL   something
+JUMP    EndReadRemote
 Execute8:
-    CALL    MoveBWD
-    JUMP    EndReadRemote
+CALL    MoveBWD
+JUMP    EndReadRemote
 Execute9:
-    ;CALL   something
-    JUMP    EndReadRemote
+;CALL   something
+JUMP    EndReadRemote
 Execute0:
-    CALL 	AutomaticParking
-    JUMP    EndReadRemote
+CALL 	AutomaticParking
+JUMP    EndReadRemote
 
 EndReadRemote:
-    OUT     IR_LO
-    RETURN
+OUT     IR_LO
+RETURN
 
 Remote1:        DW  &H20DF
 Remote2:        DW  &HA05F
@@ -124,170 +124,204 @@ Remote0:        DW  &HB847
 ButtonPressed:  DW  0
 
 TurnLeft:
-    IN      THETA   ; taking in the current angle of the robot
-    ADDI    90      ; we desire to turn 90 degrees to the left
-    CALL    Mod360  ; mod'ing the angle by 360 degrees to get appropriate theta
-    STORE   DTheta  ; we want the angle to change to this new angle
-    CALL	TestAngle
-    RETURN
+IN      THETA   ; taking in the current angle of the robot
+ADDI    90      ; we desire to turn 90 degrees to the left
+CALL    Mod360  ; mod'ing the angle by 360 degrees to get appropriate theta
+STORE   DTheta  ; we want the angle to change to this new angle
+CALL	TestAngle
+RETURN
 
 TurnRight:
-    IN      THETA   ; taking in the current angle of the robot
-    ADDI    -90     ; we desire to turn 90 degrees to the right
-    CALL    Mod360  ; mod'ing the angle by 360 degrees to get appropriate theta
-    STORE   DTheta  ; we want the angle to change to this new angle
-    CALL	TestAngle
-    RETURN
+IN      THETA   ; taking in the current angle of the robot
+ADDI    -90     ; we desire to turn 90 degrees to the right
+CALL    Mod360  ; mod'ing the angle by 360 degrees to get appropriate theta
+STORE   DTheta  ; we want the angle to change to this new angle
+CALL	TestAngle
+RETURN
 
 TestAngle:
-	; wait for robot to turn completely to the desired angle
-	CALL	GetThetaErr
-    CALL	Abs
-    JPOS	TestAngle
-    RETURN
+; wait for robot to turn completely to the desired angle
+CALL	GetThetaErr
+CALL	Abs
+JPOS	TestAngle
+RETURN
 
 MoveFWD:
-    LOAD    FMid    ;load in FWD
-    STORE   DVel
-    IN      XPOS    ;load x position
-    OUT     SSEG1   ;show on SSEG first 4
-    IN      YPOS    ; load in y position
-    OUT     SSEG2   ; Show on SSEG second 4
-    RETURN
+LOAD    FMid    ;load in FWD
+STORE   DVel
+IN      XPOS    ;load x position
+OUT     SSEG1   ;show on SSEG first 4
+IN      YPOS    ; load in y position
+OUT     SSEG2   ; Show on SSEG second 4
+RETURN
 
 MoveBWD:
-    LOAD    RSlow       ;load in BWD
-    STORE   DVel
-    IN      XPOS        ;load x position
-    OUT     SSEG1       ;show on SSEG (first 4)
-    IN      YPOS        ; load in y position
-    OUT     SSEG2       ; Show on SSEG (second 4)
-    RETURN
+LOAD    RSlow       ;load in BWD
+STORE   DVel
+IN      XPOS        ;load x position
+OUT     SSEG1       ;show on SSEG (first 4)
+IN      YPOS        ; load in y position
+OUT     SSEG2       ; Show on SSEG (second 4)
+RETURN
 
 Stop:
-    LOADI   0
-    STORE   DVel    ; setting velocity to 0 to stop the robot
-    RETURN
+LOADI   0
+STORE   DVel    ; setting velocity to 0 to stop the robot
+RETURN
 
 ;*************************************************************
 ; Automatic Perpendicular Parking Algorithm
 ;       Completely autonomous parking from start to finish
 ;*************************************************************
 AutomaticParking:
-    IN      IR_LO
-    STORE   SpotSelected
-    XOR     Remote1
-    JZERO   Spot1           ; 1 is pressed
-    LOAD    SpotSelected
-    XOR     Remote2
-    JZERO   Spot2           ; 2 is pressed
-    LOAD    SpotSelected
-    XOR     Remote3
-    JZERO   Spot3           ; 3 is pressed
-    LOAD    SpotSelected
-    XOR     Remote4
-    JZERO   Spot4           ; 4 is pressed
-    LOAD    SpotSelected
-    XOR     Remote5
-    JZERO   Spot5           ; 5 is pressed
-    LOAD    SpotSelected
-    XOR     Remote6
-    JZERO   Spot6           ; 6 is pressed
-    LOAD    SpotSelected
-    XOR     Remote7
-    JZERO   Spot7           ; 7 is pressed
-    JUMP    AutomaticParking
+IN      IR_LO
+STORE   SpotSelected
+XOR     Remote1
+JZERO   Spot1           ; 1 is pressed
+LOAD    SpotSelected
+XOR     Remote2
+JZERO   Spot2           ; 2 is pressed
+LOAD    SpotSelected
+XOR     Remote3
+JZERO   Spot3           ; 3 is pressed
+LOAD    SpotSelected
+XOR     Remote4
+JZERO   Spot4           ; 4 is pressed
+LOAD    SpotSelected
+XOR     Remote5
+JZERO   Spot5           ; 5 is pressed
+LOAD    SpotSelected
+XOR     Remote6
+JZERO   Spot6           ; 6 is pressed
+LOAD    SpotSelected
+XOR     Remote7
+JZERO   Spot7           ; 7 is pressed
+JUMP    AutomaticParking
 
-    SpotSelected:   DW  0
+SpotSelected:   DW  0
 
 Spot1:
-    LOAD    One
-    STORE   SpotSelected    ; storing value of 1 into SpotSelected
-    JUMP    AutomaticManeuver
+LOAD    One
+STORE   SpotSelected    ; storing value of 1 into SpotSelected
+JUMP    AutomaticManeuver
 Spot2:
-    LOAD    Two
-    STORE   SpotSelected    ; storing value of 2 into SpotSelected
-    JUMP    AutomaticManeuver
+LOAD    Two
+STORE   SpotSelected    ; storing value of 2 into SpotSelected
+JUMP    AutomaticManeuver
 Spot3:
-    LOAD    Three
-    STORE   SpotSelected    ; storing value of 3 into SpotSelected
-    JUMP    AutomaticManeuver
+LOAD    Three
+STORE   SpotSelected    ; storing value of 3 into SpotSelected
+JUMP    AutomaticManeuver
 Spot4:
-    LOAD    Four
-    STORE   SpotSelected    ; storing value of 4 into SpotSelected
-    JUMP    AutomaticManeuver
+LOAD    Four
+STORE   SpotSelected    ; storing value of 4 into SpotSelected
+JUMP    AutomaticManeuver
 Spot5:
-    LOAD    Five
-    STORE   SpotSelected    ; storing value of 5 into SpotSelected
-    JUMP    AutomaticManeuver
+LOAD    Five
+STORE   SpotSelected    ; storing value of 5 into SpotSelected
+JUMP    AutomaticManeuver
 Spot6:
-    LOAD    Six
-    STORE   SpotSelected    ; storing value of 6 into SpotSelected
-    JUMP    AutomaticManeuver
+LOAD    Six
+STORE   SpotSelected    ; storing value of 6 into SpotSelected
+JUMP    AutomaticManeuver
 Spot7:
-    LOAD    Seven
-    STORE   SpotSelected    ; storing value of 7 into SpotSelected
-    JUMP    AutomaticManeuver
+LOAD    Seven
+STORE   SpotSelected    ; storing value of 7 into SpotSelected
+JUMP    AutomaticManeuver
 
 AutomaticManeuver:
-	LOAD	SpotSelected
-	OUT		LCD			; showing spot selected on the LCD screen
-    OUT     RESETPOS    ; resetting the position of the robot
-    CALL    MoveFWD     ; moving forward
+LOAD	SpotSelected
+OUT		LCD			; showing spot selected on the LCD screen
+OUT     RESETPOS    ; resetting the position of the robot
+CALL    MoveFWD     ; moving forward
 
 CheckTurn1:
-    IN      XPos        ; reading in the position of the robot
-    OUT     SSEG1       ; outputting XPos to SSEG1 for debugging
-    ADDI    -510        ; checking to see if it has gone 55 cm yet
-    JPOS    Turn1       ; if we have travelled 55cm, we are ready to turn
-    JUMP    CheckTurn1  ; else, keep checking the distance travelled
+IN      XPos        ; reading in the position of the robot
+OUT     SSEG1       ; outputting XPos to SSEG1 for debugging
+ADDI    -510        ; checking to see if it has gone 55 cm yet
+JPOS    Turn1       ; if we have travelled 55cm, we are ready to turn
+JUMP    CheckTurn1  ; else, keep checking the distance travelled
 
 Turn1:
-    CALL    Stop        ; stopping the robot
-    CALL    TurnRight   ; turning the robot 90 degrees to the right
+CALL    Stop        ; stopping the robot
+CALL    TurnRight   ; turning the robot 90 degrees to the right
 
-    CALL    MoveFWD     ; moving forward
+CALL    MoveFWD     ; moving forward
 
 CheckTurn2:
-    IN      YPos        ; reading in the position of the robot
-    OUT     SSEG2       ; outputting YPos to SSEG2 for debugging
-    ADDI    950	        ; checking to see if it has gone 105 cm yet (in the negative y direction)
-    JNEG    Turn2       ; if we have travelled 1010cm, we are ready to turn
-    JUMP    CheckTurn2  ; else, keep checking the distance travelled
+IN      YPos        ; reading in the position of the robot
+OUT     SSEG2       ; outputting YPos to SSEG2 for debugging
+ADDI    950	        ; checking to see if it has gone 105 cm yet (in the negative y direction)
+JNEG    Turn2       ; if we have travelled 1010cm, we are ready to turn
+JUMP    CheckTurn2  ; else, keep checking the distance travelled
 
 Turn2:
-    CALL    Stop        ; stopping the robot
-    CALL    TurnLeft    ; turning the robot 90 degrees to the left
+CALL    Stop        ; stopping the robot
+CALL    TurnLeft    ; turning the robot 90 degrees to the left
 
-    CALL    MoveFWD     ; moving forward
+CALL    MoveFWD     ; moving forward
+
+
+LOADI   7
+SUB     SpotSelected
+STORE   Mult1
+LOADI   361         ; width of each parking spot
+STORE   Mult2
+CALL    Multiply
 
 CheckStopPoint:
-    IN      XPos        ; reading in the position of the robot
-    OUT     SSEG1       ; outputting XPos to SSEG1 for debugging
+IN      XPos        ; reading in the position of the robot
+OUT     SSEG1       ; outputting XPos to SSEG1 for debugging
 
-	RETURN
+SUB     MultResult
+JPOS    Turn3
+JUMP    CheckStopPoint
+
+Turn3:
+CALL    Stop
+CALL    TurnRight
+CALL    MoveFWD
+
+
+CheckFinalStop:
+IN      XPos        ; read xPos
+OUT     SSEG1
+ADDI    -456        ; distance bot should drive into each spot
+JPOS    Finished
+JUMP    CheckFinalStop
+
+
+Finished:
+CALL    Stop
+
+
+
+
+
+
+RETURN
 
 
 ;***************************************************************
 ;* Main code
 ;***************************************************************
 Main:
-    OUT    RESETPOS    ; reset odometer in case wheels moved after programming
+OUT    RESETPOS    ; reset odometer in case wheels moved after programming
 
-    ; Before enabling the movement control code, set it to
-    ; not start moving immediately.
-    LOADI  0
-    STORE  DVel        ; desired forward velocity
-    IN     THETA
-    STORE  DTheta      ; desired heading
-    ; configure timer interrupts to enable the movement control code
-    LOADI  10          ; 10ms * 10 = 0.1s rate, or 10Hz.
-    OUT    CTIMER      ; turn on timer peripheral
-    SEI    &B0010      ; enable interrupts from source 2 (timer)
-    ; at this point, timer interrupts will be firing at 10Hz, and
-    ; code in that ISR will attempt to control the robot.
-    ; If you want to take manual control of the robot,
-    ; execute a CLI &B0010 to disable the interrupt.
+; Before enabling the movement control code, set it to
+; not start moving immediately.
+LOADI  0
+STORE  DVel        ; desired forward velocity
+IN     THETA
+STORE  DTheta      ; desired heading
+; configure timer interrupts to enable the movement control code
+LOADI  10          ; 10ms * 10 = 0.1s rate, or 10Hz.
+OUT    CTIMER      ; turn on timer peripheral
+SEI    &B0010      ; enable interrupts from source 2 (timer)
+; at this point, timer interrupts will be firing at 10Hz, and
+; code in that ISR will attempt to control the robot.
+; If you want to take manual control of the robot,
+; execute a CLI &B0010 to disable the interrupt.
 
 ; As a quick demo of the movement control, the robot is first
 ; directed to turn in-place 90 degrees clockwise, then
@@ -298,42 +332,42 @@ Main:
 ; values are read.
 
 ForeverReadRemote:
-    CALL    ReadRemote
-    JUMP    ForeverReadRemote
+CALL    ReadRemote
+JUMP    ForeverReadRemote
 
 ForeverDisp:
-    CALL   IRDisp      ; Display the current IR code
-    JUMP   ForeverDisp
+CALL   IRDisp      ; Display the current IR code
+JUMP   ForeverDisp
 
 IRDisp:
-    IN     IR_HI       ; get the high word
-    OUT    SSEG1
-    IN     IR_LO       ; get the low word
-    OUT    SSEG2
+IN     IR_HI       ; get the high word
+OUT    SSEG1
+IN     IR_LO       ; get the low word
+OUT    SSEG2
 ;   OUT    IR_HI       ; this would reset the value to 0
-    RETURN
+RETURN
 
 Die:
 ; Sometimes it's useful to permanently stop execution.
 ; This will also catch the execution if it accidentally
 ; falls through from above.
-    CLI    &B1111      ; disable all interrupts
-    LOAD   Zero        ; Stop everything.
-    OUT    LVELCMD
-    OUT    RVELCMD
-    OUT    SONAREN
-    LOAD   DEAD        ; An indication that we are dead
-    OUT    SSEG2       ; "dEAd" on the LEDs
+CLI    &B1111      ; disable all interrupts
+LOAD   Zero        ; Stop everything.
+OUT    LVELCMD
+OUT    RVELCMD
+OUT    SONAREN
+LOAD   DEAD        ; An indication that we are dead
+OUT    SSEG2       ; "dEAd" on the LEDs
 Forever:
-    JUMP   Forever     ; Do this forever.
-    DEAD:  DW &HDEAD   ; Example of a "local" variable
+JUMP   Forever     ; Do this forever.
+DEAD:  DW &HDEAD   ; Example of a "local" variable
 
 
 ; Timer ISR.  Currently just calls the movement control code.
 ; You could, however, do additional tasks here if desired.
 CTimer_ISR:
-    CALL   ControlMovement
-    RETI   ; return from ISR
+CALL   ControlMovement
+RETI   ; return from ISR
 
 
 ; Control code.  If called repeatedly, this code will attempt
@@ -342,73 +376,110 @@ CTimer_ISR:
 DTheta:    DW 0
 DVel:      DW 0
 ControlMovement:
-    LOADI  50          ; used later to get a +/- constant
-    STORE  MaxVal
-    CALL   GetThetaErr ; get the heading error
-    ; A simple way to get a decent velocity value
-    ; for turning is to multiply the angular error by 4
-    ; and add ~50.
-    SHIFT  2
-    STORE  CMAErr      ; hold temporarily
-    SHIFT  3           ; multiply by another 4
-    CALL   CapValue    ; get a +/- max of 50
-    ADD    CMAErr
-    STORE  CMAErr
+LOADI  50          ; used later to get a +/- constant
+STORE  MaxVal
+CALL   GetThetaErr ; get the heading error
+; A simple way to get a decent velocity value
+; for turning is to multiply the angular error by 4
+; and add ~50.
+SHIFT  2
+STORE  CMAErr      ; hold temporarily
+SHIFT  3           ; multiply by another 4
+CALL   CapValue    ; get a +/- max of 50
+ADD    CMAErr
+STORE  CMAErr
 
 
-    ; For this basic control method, simply take the
-    ; desired forward velocity and add a differential
-    ; velocity for each wheel when turning is needed.
-    LOADI  510
-    STORE  MaxVal
-    LOAD   DVel
-    CALL   CapValue    ; ensure velocity is valid
-    STORE  DVel        ; overwrite any invalid input
-    ADD    CMAErr
-    CALL   CapValue    ; ensure velocity is valid
-    OUT    RVELCMD
-    LOAD   CMAErr
-    CALL   Neg         ; left wheel gets negative differential
-    ADD    DVel
-    CALL   CapValue
-    OUT    LVELCMD
+; For this basic control method, simply take the
+; desired forward velocity and add a differential
+; velocity for each wheel when turning is needed.
+LOADI  510
+STORE  MaxVal
+LOAD   DVel
+CALL   CapValue    ; ensure velocity is valid
+STORE  DVel        ; overwrite any invalid input
+ADD    CMAErr
+CALL   CapValue    ; ensure velocity is valid
+OUT    RVELCMD
+LOAD   CMAErr
+CALL   Neg         ; left wheel gets negative differential
+ADD    DVel
+CALL   CapValue
+OUT    LVELCMD
 
-    RETURN
-    CMAErr: DW 0       ; holds angle error velocity
+RETURN
+CMAErr: DW 0       ; holds angle error velocity
 
 ; Returns the current angular error wrapped to +/-180
 GetThetaErr:
-    ; convenient way to get angle error in +/-180 range is
-    ; ((error + 180) % 360 ) - 180
-    IN     THETA
-    SUB    DTheta      ; actual - desired angle
-    CALL   Neg         ; desired - actual angle
-    ADDI   180
-    CALL   Mod360
-    ADDI   -180
-    RETURN
+; convenient way to get angle error in +/-180 range is
+; ((error + 180) % 360 ) - 180
+IN     THETA
+SUB    DTheta      ; actual - desired angle
+CALL   Neg         ; desired - actual angle
+ADDI   180
+CALL   Mod360
+ADDI   -180
+RETURN
 
 ; caps a value to +/-MaxVal
 CapValue:
-    SUB     MaxVal
-    JPOS    CapVelHigh
-    ADD     MaxVal
-    ADD     MaxVal
-    JNEG    CapVelLow
-    SUB     MaxVal
-    RETURN
+SUB     MaxVal
+JPOS    CapVelHigh
+ADD     MaxVal
+ADD     MaxVal
+JNEG    CapVelLow
+SUB     MaxVal
+RETURN
 CapVelHigh:
-    LOAD    MaxVal
-    RETURN
+LOAD    MaxVal
+RETURN
 CapVelLow:
-    LOAD    MaxVal
-    CALL    Neg
-    RETURN
-    MaxVal: DW 510
+LOAD    MaxVal
+CALL    Neg
+RETURN
+MaxVal: DW 510
 
 ;***************************************************************
 ;* Subroutines
 ;***************************************************************
+
+Multiply:
+LOAD    Mult1       ;CASE 0
+JZERO   Return0
+
+LOAD    Mult1       ;CASE 1
+ADDI    -1
+JZERO   ReturnMult2
+JUMP    Multiply2
+
+Return0:
+LOADI   0
+STORE   MultResult
+RETURN
+
+ReturnMult2:
+LOAD    Mult2
+STORE   MultResult
+RETURN
+
+
+Multiply2:
+LOAD    Mult1
+ADDI    -1
+STORE   Mult1
+MultiplyLoop:
+LOAD    MultResult
+ADD     Mult2
+STORE   MultResult
+LOAD    Mult1
+ADDI    -1
+STORE   Mult1
+JPOS    MultiplyLoop
+RETURN
+
+
+
 
 
 ;*******************************************************************************
@@ -417,14 +488,14 @@ CapVelLow:
 ; Written by Kevin Johnson.  No licence or copyright applied.
 ;*******************************************************************************
 Mod360:
-    ; easy modulo: subtract 360 until negative then add 360 until not negative
-    JNEG   M360N
-    ADDI   -360
-    JUMP   Mod360
+; easy modulo: subtract 360 until negative then add 360 until not negative
+JNEG   M360N
+ADDI   -360
+JUMP   Mod360
 M360N:
-    ADDI   360
-    JNEG   M360N
-    RETURN
+ADDI   360
+JNEG   M360N
+RETURN
 
 ;*******************************************************************************
 ; Abs: 2's complement absolute value
@@ -434,12 +505,12 @@ M360N:
 ; Written by Kevin Johnson.  No licence or copyright applied.
 ;*******************************************************************************
 Abs:
-    JPOS   Abs_r
+JPOS   Abs_r
 Neg:
-    XOR    NegOne       ; Flip all bits
-    ADDI   1            ; Add one (i.e. negate number)
+XOR    NegOne       ; Flip all bits
+ADDI   1            ; Add one (i.e. negate number)
 Abs_r:
-    RETURN
+RETURN
 
 ;******************************************************************************;
 ; Atan2: 4-quadrant arctangent calculation                                     ;
@@ -463,113 +534,113 @@ Abs_r:
 ; - LowByte: DW &HFF                                                           ;
 ;******************************************************************************;
 Atan2:
-    LOAD   AtanY
-    CALL   Abs          ; abs(y)
-    STORE  AtanT
-    LOAD   AtanX        ; abs(x)
-    CALL   Abs
-    SUB    AtanT        ; abs(x) - abs(y)
-    JNEG   A2_sw        ; if abs(y) > abs(x), switch arguments.
-    LOAD   AtanX        ; Octants 1, 4, 5, 8
-    JNEG   A2_R3
-    CALL   A2_calc      ; Octants 1, 8
-    JNEG   A2_R1n
-    RETURN              ; Return raw value if in octant 1
+LOAD   AtanY
+CALL   Abs          ; abs(y)
+STORE  AtanT
+LOAD   AtanX        ; abs(x)
+CALL   Abs
+SUB    AtanT        ; abs(x) - abs(y)
+JNEG   A2_sw        ; if abs(y) > abs(x), switch arguments.
+LOAD   AtanX        ; Octants 1, 4, 5, 8
+JNEG   A2_R3
+CALL   A2_calc      ; Octants 1, 8
+JNEG   A2_R1n
+RETURN              ; Return raw value if in octant 1
 A2_R1n: ; region 1 negative
-    ADDI   360          ; Add 360 if we are in octant 8
-    RETURN
+ADDI   360          ; Add 360 if we are in octant 8
+RETURN
 A2_R3: ; region 3
-    CALL   A2_calc      ; Octants 4, 5
-    ADDI   180          ; theta' = theta + 180
-    RETURN
+CALL   A2_calc      ; Octants 4, 5
+ADDI   180          ; theta' = theta + 180
+RETURN
 A2_sw: ; switch arguments; octants 2, 3, 6, 7
-    LOAD   AtanY        ; Swap input arguments
-    STORE  AtanT
-    LOAD   AtanX
-    STORE  AtanY
-    LOAD   AtanT
-    STORE  AtanX
-    JPOS   A2_R2        ; If Y positive, octants 2,3
-    CALL   A2_calc      ; else octants 6, 7
-    CALL   Neg          ; Negatge the number
-    ADDI   270          ; theta' = 270 - theta
-    RETURN
+LOAD   AtanY        ; Swap input arguments
+STORE  AtanT
+LOAD   AtanX
+STORE  AtanY
+LOAD   AtanT
+STORE  AtanX
+JPOS   A2_R2        ; If Y positive, octants 2,3
+CALL   A2_calc      ; else octants 6, 7
+CALL   Neg          ; Negatge the number
+ADDI   270          ; theta' = 270 - theta
+RETURN
 A2_R2: ; region 2
-    CALL   A2_calc      ; Octants 2, 3
-    CALL   Neg          ; negate the angle
-    ADDI   90           ; theta' = 90 - theta
-    RETURN
+CALL   A2_calc      ; Octants 2, 3
+CALL   Neg          ; negate the angle
+ADDI   90           ; theta' = 90 - theta
+RETURN
 A2_calc:
-    ; calculates R/(1 + 0.28125*R^2)
-    LOAD   AtanY
-    STORE  d16sN        ; Y in numerator
-    LOAD   AtanX
-    STORE  d16sD        ; X in denominator
-    CALL   A2_div       ; divide
-    LOAD   dres16sQ     ; get the quotient (remainder ignored)
-    STORE  AtanRatio
-    STORE  m16sA
-    STORE  m16sB
-    CALL   A2_mult      ; X^2
-    STORE  m16sA
-    LOAD   A2c
-    STORE  m16sB
-    CALL   A2_mult
-    ADDI   256          ; 256/256+0.28125X^2
-    STORE  d16sD
-    LOAD   AtanRatio
-    STORE  d16sN        ; Ratio in numerator
-    CALL   A2_div       ; divide
-    LOAD   dres16sQ     ; get the quotient (remainder ignored)
-    STORE  m16sA        ; <= result in radians
-    LOAD   A2cd         ; degree conversion factor
-    STORE  m16sB
-    CALL   A2_mult      ; convert to degrees
-    STORE  AtanT
-    SHIFT  -7           ; check 7th bit
-    AND    One
-    JZERO  A2_rdwn      ; round down
-    LOAD   AtanT
-    SHIFT  -8
-    ADDI   1            ; round up
-    RETURN
+; calculates R/(1 + 0.28125*R^2)
+LOAD   AtanY
+STORE  d16sN        ; Y in numerator
+LOAD   AtanX
+STORE  d16sD        ; X in denominator
+CALL   A2_div       ; divide
+LOAD   dres16sQ     ; get the quotient (remainder ignored)
+STORE  AtanRatio
+STORE  m16sA
+STORE  m16sB
+CALL   A2_mult      ; X^2
+STORE  m16sA
+LOAD   A2c
+STORE  m16sB
+CALL   A2_mult
+ADDI   256          ; 256/256+0.28125X^2
+STORE  d16sD
+LOAD   AtanRatio
+STORE  d16sN        ; Ratio in numerator
+CALL   A2_div       ; divide
+LOAD   dres16sQ     ; get the quotient (remainder ignored)
+STORE  m16sA        ; <= result in radians
+LOAD   A2cd         ; degree conversion factor
+STORE  m16sB
+CALL   A2_mult      ; convert to degrees
+STORE  AtanT
+SHIFT  -7           ; check 7th bit
+AND    One
+JZERO  A2_rdwn      ; round down
+LOAD   AtanT
+SHIFT  -8
+ADDI   1            ; round up
+RETURN
 A2_rdwn:
-    LOAD   AtanT
-    SHIFT  -8           ; round down
-    RETURN
+LOAD   AtanT
+SHIFT  -8           ; round down
+RETURN
 A2_mult: ; multiply, and return bits 23..8 of result
-    CALL   Mult16s
-    LOAD   mres16sH
-    SHIFT  8            ; move high word of result up 8 bits
-    STORE  mres16sH
-    LOAD   mres16sL
-    SHIFT  -8           ; move low word of result down 8 bits
-    AND    LowByte
-    OR     mres16sH     ; combine high and low words of result
-    RETURN
+CALL   Mult16s
+LOAD   mres16sH
+SHIFT  8            ; move high word of result up 8 bits
+STORE  mres16sH
+LOAD   mres16sL
+SHIFT  -8           ; move low word of result down 8 bits
+AND    LowByte
+OR     mres16sH     ; combine high and low words of result
+RETURN
 A2_div: ; 16-bit division scaled by 256, minimizing error
-    LOADI  9            ; loop 8 times (256 = 2^8)
-    STORE  AtanT
+LOADI  9            ; loop 8 times (256 = 2^8)
+STORE  AtanT
 A2_DL:
-    LOAD   AtanT
-    ADDI   -1
-    JPOS   A2_DN        ; not done; continue shifting
-    CALL   Div16s       ; do the standard division
-    RETURN
+LOAD   AtanT
+ADDI   -1
+JPOS   A2_DN        ; not done; continue shifting
+CALL   Div16s       ; do the standard division
+RETURN
 A2_DN:
-    STORE  AtanT
-    LOAD   d16sN        ; start by trying to scale the numerator
-    SHIFT  1
-    XOR    d16sN        ; if the sign changed,
-    JNEG   A2_DD        ; switch to scaling the denominator
-    XOR    d16sN        ; get back shifted version
-    STORE  d16sN
-    JUMP   A2_DL
+STORE  AtanT
+LOAD   d16sN        ; start by trying to scale the numerator
+SHIFT  1
+XOR    d16sN        ; if the sign changed,
+JNEG   A2_DD        ; switch to scaling the denominator
+XOR    d16sN        ; get back shifted version
+STORE  d16sN
+JUMP   A2_DL
 A2_DD:
-    LOAD   d16sD
-    SHIFT  -1           ; have to scale denominator
-    STORE  d16sD
-    JUMP   A2_DL
+LOAD   d16sD
+SHIFT  -1           ; have to scale denominator
+STORE  d16sD
+JUMP   A2_DL
 AtanX:      DW 0
 AtanY:      DW 0
 AtanRatio:  DW 0        ; =y/x
@@ -588,43 +659,43 @@ A2cd:       DW 14668    ; = 180/pi with 8 fractional bits
 ; - Result is stored in mres16sH and mres16sL (high and low words).
 ;*******************************************************************************
 Mult16s:
-    LOADI  0
-    STORE  m16sc        ; clear carry
-    STORE  mres16sH     ; clear result
-    LOADI  16           ; load 16 to counter
+LOADI  0
+STORE  m16sc        ; clear carry
+STORE  mres16sH     ; clear result
+LOADI  16           ; load 16 to counter
 Mult16s_loop:
-    STORE  mcnt16s
-    LOAD   m16sc        ; check the carry (from previous iteration)
-    JZERO  Mult16s_noc  ; if no carry, move on
-    LOAD   mres16sH     ; if a carry,
-    ADD    m16sA        ;  add multiplicand to result H
-    STORE  mres16sH
+STORE  mcnt16s
+LOAD   m16sc        ; check the carry (from previous iteration)
+JZERO  Mult16s_noc  ; if no carry, move on
+LOAD   mres16sH     ; if a carry,
+ADD    m16sA        ;  add multiplicand to result H
+STORE  mres16sH
 Mult16s_noc: ; no carry
-    LOAD   m16sB
-    AND    One          ; check bit 0 of multiplier
-    STORE  m16sc        ; save as next carry
-    JZERO  Mult16s_sh   ; if no carry, move on to shift
-    LOAD   mres16sH     ; if bit 0 set,
-    SUB    m16sA        ;  subtract multiplicand from result H
-    STORE  mres16sH
+LOAD   m16sB
+AND    One          ; check bit 0 of multiplier
+STORE  m16sc        ; save as next carry
+JZERO  Mult16s_sh   ; if no carry, move on to shift
+LOAD   mres16sH     ; if bit 0 set,
+SUB    m16sA        ;  subtract multiplicand from result H
+STORE  mres16sH
 Mult16s_sh:
-    LOAD   m16sB
-    SHIFT  -1           ; shift result L >>1
-    AND    c7FFF        ; clear msb
-    STORE  m16sB
-    LOAD   mres16sH     ; load result H
-    SHIFT  15           ; move lsb to msb
-    OR     m16sB
-    STORE  m16sB        ; result L now includes carry out from H
-    LOAD   mres16sH
-    SHIFT  -1
-    STORE  mres16sH     ; shift result H >>1
-    LOAD   mcnt16s
-    ADDI   -1           ; check counter
-    JPOS   Mult16s_loop ; need to iterate 16 times
-    LOAD   m16sB
-    STORE  mres16sL     ; multiplier and result L shared a word
-    RETURN              ; Done
+LOAD   m16sB
+SHIFT  -1           ; shift result L >>1
+AND    c7FFF        ; clear msb
+STORE  m16sB
+LOAD   mres16sH     ; load result H
+SHIFT  15           ; move lsb to msb
+OR     m16sB
+STORE  m16sB        ; result L now includes carry out from H
+LOAD   mres16sH
+SHIFT  -1
+STORE  mres16sH     ; shift result H >>1
+LOAD   mcnt16s
+ADDI   -1           ; check counter
+JPOS   Mult16s_loop ; need to iterate 16 times
+LOAD   m16sB
+STORE  mres16sL     ; multiplier and result L shared a word
+RETURN              ; Done
 c7FFF: DW &H7FFF
 m16sA: DW 0 ; multiplicand
 m16sB: DW 0 ; multipler
@@ -644,59 +715,59 @@ mres16sH: DW 0 ; result high
 ; Requires Abs subroutine
 ;*******************************************************************************
 Div16s:
-    LOADI  0
-    STORE  dres16sR     ; clear remainder result
-    STORE  d16sC1       ; clear carry
-    LOAD   d16sN
-    XOR    d16sD
-    STORE  d16sS        ; sign determination = N XOR D
-    LOADI  17
-    STORE  d16sT        ; preload counter with 17 (16+1)
-    LOAD   d16sD
-    CALL   Abs          ; take absolute value of denominator
-    STORE  d16sD
-    LOAD   d16sN
-    CALL   Abs          ; take absolute value of numerator
-    STORE  d16sN
+LOADI  0
+STORE  dres16sR     ; clear remainder result
+STORE  d16sC1       ; clear carry
+LOAD   d16sN
+XOR    d16sD
+STORE  d16sS        ; sign determination = N XOR D
+LOADI  17
+STORE  d16sT        ; preload counter with 17 (16+1)
+LOAD   d16sD
+CALL   Abs          ; take absolute value of denominator
+STORE  d16sD
+LOAD   d16sN
+CALL   Abs          ; take absolute value of numerator
+STORE  d16sN
 Div16s_loop:
-    LOAD   d16sN
-    SHIFT  -15          ; get msb
-    AND    One          ; only msb (because shift is arithmetic)
-    STORE  d16sC2       ; store as carry
-    LOAD   d16sN
-    SHIFT  1            ; shift <<1
-    OR     d16sC1       ; with carry
-    STORE  d16sN
-    LOAD   d16sT
-    ADDI   -1           ; decrement counter
-    JZERO  Div16s_sign  ; if finished looping, finalize result
-    STORE  d16sT
-    LOAD   dres16sR
-    SHIFT  1            ; shift remainder
-    OR     d16sC2       ; with carry from other shift
-    SUB    d16sD        ; subtract denominator from remainder
-    JNEG   Div16s_add   ; if negative, need to add it back
-    STORE  dres16sR
-    LOADI  1
-    STORE  d16sC1       ; set carry
-    JUMP   Div16s_loop
+LOAD   d16sN
+SHIFT  -15          ; get msb
+AND    One          ; only msb (because shift is arithmetic)
+STORE  d16sC2       ; store as carry
+LOAD   d16sN
+SHIFT  1            ; shift <<1
+OR     d16sC1       ; with carry
+STORE  d16sN
+LOAD   d16sT
+ADDI   -1           ; decrement counter
+JZERO  Div16s_sign  ; if finished looping, finalize result
+STORE  d16sT
+LOAD   dres16sR
+SHIFT  1            ; shift remainder
+OR     d16sC2       ; with carry from other shift
+SUB    d16sD        ; subtract denominator from remainder
+JNEG   Div16s_add   ; if negative, need to add it back
+STORE  dres16sR
+LOADI  1
+STORE  d16sC1       ; set carry
+JUMP   Div16s_loop
 Div16s_add:
-    ADD    d16sD        ; add denominator back in
-    STORE  dres16sR
-    LOADI  0
-    STORE  d16sC1       ; clear carry
-    JUMP   Div16s_loop
+ADD    d16sD        ; add denominator back in
+STORE  dres16sR
+LOADI  0
+STORE  d16sC1       ; clear carry
+JUMP   Div16s_loop
 Div16s_sign:
-    LOAD   d16sN
-    STORE  dres16sQ     ; numerator was used to hold quotient result
-    LOAD   d16sS        ; check the sign indicator
-    JNEG   Div16s_neg
-    RETURN
+LOAD   d16sN
+STORE  dres16sQ     ; numerator was used to hold quotient result
+LOAD   d16sS        ; check the sign indicator
+JNEG   Div16s_neg
+RETURN
 Div16s_neg:
-    LOAD   dres16sQ     ; need to negate the result
-    CALL   Neg
-    STORE  dres16sQ
-    RETURN
+LOAD   dres16sQ     ; need to negate the result
+CALL   Neg
+STORE  dres16sQ
+RETURN
 d16sN: DW 0 ; numerator
 d16sD: DW 0 ; denominator
 d16sS: DW 0 ; sign value
@@ -719,52 +790,52 @@ dres16sR: DW 0 ; remainder result
 ; Requires Abs and Mult16s subroutines.
 ;*******************************************************************************
 L2Estimate:
-    ; take abs() of each value, and find the largest one
-    LOAD   L2X
-    CALL   Abs
-    STORE  L2T1
-    LOAD   L2Y
-    CALL   Abs
-    SUB    L2T1
-    JNEG   GDSwap    ; swap if needed to get largest value in X
-    ADD    L2T1
+; take abs() of each value, and find the largest one
+LOAD   L2X
+CALL   Abs
+STORE  L2T1
+LOAD   L2Y
+CALL   Abs
+SUB    L2T1
+JNEG   GDSwap    ; swap if needed to get largest value in X
+ADD    L2T1
 CalcDist:
-    ; Calculation is max(X,Y)*0.961+min(X,Y)*0.406
-    STORE  m16sa
-    LOADI  246       ; max * 246
-    STORE  m16sB
-    CALL   Mult16s
-    LOAD   mres16sH
-    SHIFT  8
-    STORE  L2T2
-    LOAD   mres16sL
-    SHIFT  -8        ; / 256
-    AND    LowByte
-    OR     L2T2
-    STORE  L2T3
-    LOAD   L2T1
-    STORE  m16sa
-    LOADI  104       ; min * 104
-    STORE  m16sB
-    CALL   Mult16s
-    LOAD   mres16sH
-    SHIFT  8
-    STORE  L2T2
-    LOAD   mres16sL
-    SHIFT  -8        ; / 256
-    AND    LowByte
-    OR     L2T2
-    ADD    L2T3     ; sum
-    RETURN
+; Calculation is max(X,Y)*0.961+min(X,Y)*0.406
+STORE  m16sa
+LOADI  246       ; max * 246
+STORE  m16sB
+CALL   Mult16s
+LOAD   mres16sH
+SHIFT  8
+STORE  L2T2
+LOAD   mres16sL
+SHIFT  -8        ; / 256
+AND    LowByte
+OR     L2T2
+STORE  L2T3
+LOAD   L2T1
+STORE  m16sa
+LOADI  104       ; min * 104
+STORE  m16sB
+CALL   Mult16s
+LOAD   mres16sH
+SHIFT  8
+STORE  L2T2
+LOAD   mres16sL
+SHIFT  -8        ; / 256
+AND    LowByte
+OR     L2T2
+ADD    L2T3     ; sum
+RETURN
 GDSwap: ; swaps the incoming X and Y
-    ADD    L2T1
-    STORE  L2T2
-    LOAD   L2T1
-    STORE  L2T3
-    LOAD   L2T2
-    STORE  L2T1
-    LOAD   L2T3
-    JUMP   CalcDist
+ADD    L2T1
+STORE  L2T2
+LOAD   L2T1
+STORE  L2T3
+LOAD   L2T2
+STORE  L2T1
+LOAD   L2T3
+JUMP   CalcDist
 L2X:  DW 0
 L2Y:  DW 0
 L2T1: DW 0
@@ -774,86 +845,86 @@ L2T3: DW 0
 
 ; Subroutine to wait (block) for 1 second
 Wait1:
-    OUT    TIMER
+OUT    TIMER
 Wloop:
-    IN     TIMER
-    OUT    XLEDS       ; User-feedback that a pause is occurring.
-    ADDI   -10         ; 1 second at 10Hz.
-    JNEG   Wloop
-    RETURN
+IN     TIMER
+OUT    XLEDS       ; User-feedback that a pause is occurring.
+ADDI   -10         ; 1 second at 10Hz.
+JNEG   Wloop
+RETURN
 
 ; This subroutine will get the battery voltage,
 ; and stop program execution if it is too low.
 ; SetupI2C must be executed prior to this.
 BattCheck:
-    CALL   GetBattLvl
-    JZERO  BattCheck   ; A/D hasn't had time to initialize
-    SUB    MinBatt
-    JNEG   DeadBatt
-    ADD    MinBatt     ; get original value back
-    RETURN
+CALL   GetBattLvl
+JZERO  BattCheck   ; A/D hasn't had time to initialize
+SUB    MinBatt
+JNEG   DeadBatt
+ADD    MinBatt     ; get original value back
+RETURN
 ; If the battery is too low, we want to make
 ; sure that the user realizes it...
 DeadBatt:
-    LOADI  &H20
-    OUT    BEEP        ; start beep sound
-    CALL   GetBattLvl  ; get the battery level
-    OUT    SSEG1       ; display it everywhere
-    OUT    SSEG2
-    OUT    LCD
-    LOAD   Zero
-    ADDI   -1          ; 0xFFFF
-    OUT    LEDS        ; all LEDs on
-    OUT    XLEDS
-    CALL   Wait1       ; 1 second
-    LOADI  &H140       ; short, high-pitched beep
-    OUT    BEEP        ; stop beeping
-    LOAD   Zero
-    OUT    LEDS        ; LEDs off
-    OUT    XLEDS
-    CALL   Wait1       ; 1 second
-    JUMP   DeadBatt    ; repeat forever
+LOADI  &H20
+OUT    BEEP        ; start beep sound
+CALL   GetBattLvl  ; get the battery level
+OUT    SSEG1       ; display it everywhere
+OUT    SSEG2
+OUT    LCD
+LOAD   Zero
+ADDI   -1          ; 0xFFFF
+OUT    LEDS        ; all LEDs on
+OUT    XLEDS
+CALL   Wait1       ; 1 second
+LOADI  &H140       ; short, high-pitched beep
+OUT    BEEP        ; stop beeping
+LOAD   Zero
+OUT    LEDS        ; LEDs off
+OUT    XLEDS
+CALL   Wait1       ; 1 second
+JUMP   DeadBatt    ; repeat forever
 
 ; Subroutine to read the A/D (battery voltage)
 ; Assumes that SetupI2C has been run
 GetBattLvl:
-    LOAD   I2CRCmd     ; 0x0190 (write 0B, read 1B, addr 0x90)
-    OUT    I2C_CMD     ; to I2C_CMD
-    OUT    I2C_RDY     ; start the communication
-    CALL   BlockI2C    ; wait for it to finish
-    IN     I2C_DATA    ; get the returned data
-    RETURN
+LOAD   I2CRCmd     ; 0x0190 (write 0B, read 1B, addr 0x90)
+OUT    I2C_CMD     ; to I2C_CMD
+OUT    I2C_RDY     ; start the communication
+CALL   BlockI2C    ; wait for it to finish
+IN     I2C_DATA    ; get the returned data
+RETURN
 
 ; Subroutine to configure the I2C for reading batt voltage
 ; Only needs to be done once after each reset.
 SetupI2C:
-    CALL   BlockI2C    ; wait for idle
-    LOAD   I2CWCmd     ; 0x1190 (write 1B, read 1B, addr 0x90)
-    OUT    I2C_CMD     ; to I2C_CMD register
-    LOAD   Zero        ; 0x0000 (A/D port 0, no increment)
-    OUT    I2C_DATA    ; to I2C_DATA register
-    OUT    I2C_RDY     ; start the communication
-    CALL   BlockI2C    ; wait for it to finish
-    RETURN
+CALL   BlockI2C    ; wait for idle
+LOAD   I2CWCmd     ; 0x1190 (write 1B, read 1B, addr 0x90)
+OUT    I2C_CMD     ; to I2C_CMD register
+LOAD   Zero        ; 0x0000 (A/D port 0, no increment)
+OUT    I2C_DATA    ; to I2C_DATA register
+OUT    I2C_RDY     ; start the communication
+CALL   BlockI2C    ; wait for it to finish
+RETURN
 
 ; Subroutine to block until I2C device is idle
 BlockI2C:
-    LOAD   Zero
-    STORE  Temp        ; Used to check for timeout
+LOAD   Zero
+STORE  Temp        ; Used to check for timeout
 BI2CL:
-    LOAD   Temp
-    ADDI   1           ; this will result in ~0.1s timeout
-    STORE  Temp
-    JZERO  I2CError    ; Timeout occurred; error
-    IN     I2C_RDY     ; Read busy signal
-    JPOS   BI2CL       ; If not 0, try again
-    RETURN             ; Else return
+LOAD   Temp
+ADDI   1           ; this will result in ~0.1s timeout
+STORE  Temp
+JZERO  I2CError    ; Timeout occurred; error
+IN     I2C_RDY     ; Read busy signal
+JPOS   BI2CL       ; If not 0, try again
+RETURN             ; Else return
 I2CError:
-    LOAD   Zero
-    ADDI   &H12C       ; "I2C"
-    OUT    SSEG1
-    OUT    SSEG2       ; display error message
-    JUMP   I2CError
+LOAD   Zero
+ADDI   &H12C       ; "I2C"
+OUT    SSEG1
+OUT    SSEG2       ; display error message
+JUMP   I2CError
 
 ;***************************************************************
 ;* Variables
@@ -876,6 +947,17 @@ Seven:    DW 7
 Eight:    DW 8
 Nine:     DW 9
 Ten:      DW 10
+
+;****************************
+;Multiplication variables
+;****************************
+
+Mult1:    DW 0
+Mult2:    DW 0
+MultResult:    DW 0
+
+
+
 
 ; Some bit masks.
 ; Masks of multiple bits can be constructed by ORing these
