@@ -147,8 +147,8 @@ TestAngle:
     RETURN
 
 MoveFWD:
-    LOAD    FSlow    ;load in FWD
-    STORE   DVel
+    LOAD    FMid    ;load in FWD
+    ;STORE   DVel
     IN      XPOS    ;load x position
     OUT     SSEG1   ;show on SSEG first 4
     IN      YPOS    ; load in y position
@@ -184,6 +184,7 @@ EndStop:
 ;       Completely autonomous parking from start to finish
 ;*************************************************************
 AutomaticParking:
+	OUT		RESETPOS
     IN      IR_LO
     STORE   SpotSelected
     XOR     Remote1
@@ -273,7 +274,7 @@ Turn2:
 
 	LOADI   7
 	SUB     SpotSelected
-	OUT		SSEG1		; display on sseg1
+	OUT		SSEG2		; display on sseg1
 	STORE   m16sA
 	LOADI   366         ; width of each parking spot
 	STORE   m16sB
@@ -305,9 +306,9 @@ CheckFinalStop:
 
 
 Finished:
-CALL    Stop
-
-RETURN
+	CALL    Stop
+	
+	RETURN
 
 FirstStraight:	DW	&H1EC
 SecondStraight:	DW	&H3AA
