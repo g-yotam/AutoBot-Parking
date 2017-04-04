@@ -149,6 +149,11 @@ TestAngle:
 MoveFWD:
     LOAD    FMid    ;load in FWD
     ;STORE   DVel
+    OUT		LVELCMD
+    OUT		RVELCMD
+    IN		LVEL
+    SUB		FMid
+    JNEG	MoveFWD
     IN      XPOS    ;load x position
     OUT     SSEG1   ;show on SSEG first 4
     IN      YPOS    ; load in y position
