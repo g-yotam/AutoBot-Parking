@@ -274,16 +274,16 @@ Turn2:
 	LOADI   7
 	SUB     SpotSelected
 	OUT		SSEG1		; display on sseg1
-	STORE   Mult1
+	STORE   m16sA
 	LOADI   366         ; width of each parking spot
-	STORE   Mult2
-	CALL    Multiply
+	STORE   m16sB
+	CALL    Mult16s
 
 CheckStopPoint:
 	IN      XPos        ; reading in the position of the robot
 	OUT     SSEG1       ; outputting XPos to SSEG1 for debugging
 
-	SUB     MultResult
+	SUB     mres16sL
 	SUB		FirstStraight
 	SUB		FirstStraight
 	JPOS    Turn3
@@ -454,48 +454,6 @@ CapVelLow:
 ;***************************************************************
 ;* Subroutines
 ;***************************************************************
-
-Multiply:
-LOAD    Mult1       ;CASE 0
-JZERO   Return0
-
-LOAD    Mult1       ;CASE 1
-ADDI    -1
-JZERO   ReturnMult2
-JUMP    Multiply2
-
-Return0:
-LOADI   0
-STORE   MultResult
-RETURN
-
-ReturnMult2:
-LOAD    Mult2
-STORE   MultResult
-RETURN
-
-
-Multiply2:
-LOAD    Mult1
-ADDI    -1
-STORE   Mult1
-MultiplyLoop:
-LOAD    MultResult
-ADD     Mult2
-STORE   MultResult
-LOAD    Mult1
-ADDI    -1
-STORE   Mult1
-JPOS    MultiplyLoop
-RETURN
-
-;****************************
-;Multiplication variables
-;****************************
-
-Mult1:    DW 0
-Mult2:    DW 0
-MultResult:    DW 0
 
 ;*******************************************************************************
 ; Mod360: modulo 360
