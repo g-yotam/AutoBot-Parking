@@ -102,7 +102,7 @@ Execute8:
     CALL    MoveBWD
     JUMP    EndReadRemote
 Execute9:
-    ;CALL   something
+    CALL   	AutoParallel
     JUMP    EndReadRemote
 Execute0:
     CALL    AutomaticParking
@@ -151,7 +151,7 @@ TestAngle:
     RETURN
 
 MoveFWD:
-    LOAD    FMid    ;load in FWD
+    LOAD    FSlow    	;load in FWD
     STORE   WheelSpeed
     IN		THETA
     STORE	CurrentAngle
@@ -204,6 +204,23 @@ DisplayPosition:
     IN		THETA
     OUT		LCD
     RETURN
+    
+AutoParallel:
+	CALL    TurnRight
+    CALL    MoveFWD
+    
+CheckParallelDist:
+    CALL    UpdatePosition
+    CALL    DisplayPosition
+    IN      YPos        	; read yPos
+    ADDI	316
+    JNEG    FinishParallel
+    JUMP    CheckParallelDist
+    
+FinishParallel:
+	CALL	TurnLeft
+	RETURN
+	
 
 ;*************************************************************
 ; Automatic Perpendicular Parking Algorithm
@@ -267,12 +284,16 @@ Spot7:
     JUMP    AutomaticManeuver
 
 AutomaticManeuver:
+	OUT		IR_LO
     LOAD    SpotSelected
     OUT     LCD         ; showing spot selected on the LCD screen
     OUT     RESETPOS    ; resetting the position of the robot
     CALL    MoveFWD     ; moving forward
     
 CheckTurn1:
+	CALL 	CheckEmergencyStop
+	LOAD	AbortMission
+	JPOS	Finished
     CALL    UpdatePosition
     CALL    DisplayPosition
     IN      XPos
@@ -287,6 +308,9 @@ Turn1:
     CALL    MoveFWD     ; moving forward
     
 CheckTurn2:
+	CALL 	CheckEmergencyStop
+	LOAD	AbortMission
+	JPOS	Finished
     CALL    UpdatePosition
     CALL    DisplayPosition
     IN      YPos        ; reading in the position of the robot
@@ -309,6 +333,9 @@ Turn2:
     CALL    Mult16s
 
 CheckStopPoint:
+	CALL 	CheckEmergencyStop
+	LOAD	AbortMission
+	JPOS	Finished
     CALL    UpdatePosition
     CALL    DisplayPosition
     IN      XPos        ; reading in the position of the robot
@@ -324,6 +351,9 @@ Turn3:
     CALL    MoveFWD
 
 CheckFinalStop:
+	CALL 	CheckEmergencyStop
+	LOAD	AbortMission
+	JPOS	Finished
     CALL    UpdatePosition
     CALL    DisplayPosition
     IN      YPos        ; read xPos
@@ -334,11 +364,54 @@ CheckFinalStop:
 
 Finished:
     CALL    Stop
-    
     RETURN
 
 FirstStraight:  DW  &H1EC
 SecondStraight: DW  &H3AA
+
+CheckEmergencyStop:
+	LOADI	0
+	STORE	AbortMission
+	IN      IR_LO
+    XOR     Remote5
+    JZERO   EmergencyStop           ; 5 is pressed
+    RETURN							; no emergency stop
+    
+EmergencyStop:
+	OUT		IR_LO
+	LOAD	WheelSpeed
+	STORE	BeforeStopSpeed
+	LOAD	CurrentAngle
+	STORE	BeforeStopAngle
+	CALL	Stop
+	BeforeStopSpeed:	DW	0
+	BeforeStopAngle:	DW	0
+
+EmergencyStop2:	
+	IN      IR_LO
+	STORE	AbortButtonPressed
+    XOR     Remote5
+    JZERO   Abort           ; 5 is pressed
+    LOAD	AbortButtonPressed
+    XOR		Remote0
+    JZERO	Continue		; 0 is pressed
+    JUMP	EmergencyStop2
+    
+    AbortButtonPressed:	DW	0
+
+Abort:
+	LOADI	1
+	STORE	AbortMission
+	RETURN
+
+Continue:
+	LOAD	BeforeStopSpeed
+	STORE	WheelSpeed
+	LOAD	BeforeStopAngle
+	STORE	CurrentAngle
+	RETURN
+	
+AbortMission:	DW	0
 
 ;***************************************************************
 ;* Main code
