@@ -42,8 +42,9 @@ WaitForSafety:
     JUMP   WaitForSafety
 
 ReadRemote:
+    CALL    UpdatePosition
+    CALL    DisplayPosition
     IN      IR_LO
-    OUT     SSEG1
     STORE   ButtonPressed
     XOR     Remote1
     JZERO   Execute1            ; 1 is pressed
@@ -74,7 +75,7 @@ ReadRemote:
     LOAD    ButtonPressed
     XOR     Remote0
     JZERO   Execute0            ; 0 is pressed
-    JUMP    ReadRemote
+    JUMP    ReadRemote      ; jump to return if no button pressed
 
 Execute1:
     ;CALL   something
@@ -95,7 +96,7 @@ Execute6:
     CALL    TurnRight
     JUMP    EndReadRemote
 Execute7:
-    ;CALL   something
+    CALL    Turn3
     JUMP    EndReadRemote
 Execute8:
     CALL    MoveBWD
@@ -104,7 +105,7 @@ Execute9:
     ;CALL   something
     JUMP    EndReadRemote
 Execute0:
-    CALL 	AutomaticParking
+    CALL    AutomaticParking
     JUMP    EndReadRemote
 
 EndReadRemote:
@@ -124,64 +125,84 @@ Remote0:        DW  &HB847
 ButtonPressed:  DW  0
 
 TurnLeft:
+    CALL    Stop
     IN      THETA   ; taking in the current angle of the robot
     ADDI    90      ; we desire to turn 90 degrees to the left
     CALL    Mod360  ; mod'ing the angle by 360 degrees to get appropriate theta
-    STORE   DTheta  ; we want the angle to change to this new angle
-    CALL	TestAngle
+    STORE   CurrentAngle  ; we want the angle to change to this new angle
+    CALL    TestAngle
     RETURN
 
 TurnRight:
+    CALL    Stop
     IN      THETA   ; taking in the current angle of the robot
     ADDI    -90     ; we desire to turn 90 degrees to the right
     CALL    Mod360  ; mod'ing the angle by 360 degrees to get appropriate theta
-    STORE   DTheta  ; we want the angle to change to this new angle
-    CALL	TestAngle
+    STORE   CurrentAngle  ; we want the angle to change to this new angle
+    CALL    TestAngle
     RETURN
     
 TestAngle:
-	; wait for robot to turn completely to the desired angle
-	CALL	GetThetaErr
-    CALL	Abs
-    JPOS	TestAngle
+    ; wait for robot to turn completely to the desired angle
+    CALL	UpdatePosition
+    CALL    GetThetaErr
+    CALL    Abs
+    JPOS    TestAngle
     RETURN
 
 MoveFWD:
     LOAD    FMid    ;load in FWD
-    ;STORE   DVel
-    OUT		LVELCMD
-    OUT		RVELCMD
-    IN		LVEL
-    SUB		FMid
-    JNEG	MoveFWD
-    IN      XPOS    ;load x position
-    OUT     SSEG1   ;show on SSEG first 4
-    IN      YPOS    ; load in y position
-    OUT     SSEG2   ; Show on SSEG second 4
+    STORE   WheelSpeed
+    IN		THETA
+    STORE	CurrentAngle
+    ;STORE      DVel
     RETURN
 
 MoveBWD:
     LOAD    RSlow       ;load in BWD
-    STORE   DVel
-    IN      XPOS        ;load x position
-    OUT     SSEG1       ;show on SSEG (first 4)
-    IN      YPOS        ; load in y position
-    OUT     SSEG2       ; Show on SSEG (second 4)
+    STORE   WheelSpeed
+    IN		THETA
+    STORE	CurrentAngle
+    ;STORE      DVel
     RETURN
 
 Stop:
     LOADI   0
-    STORE   DVel    ; setting velocity to 0 to stop the robot
+    STORE   WheelSpeed
+    IN		THETA
+    STORE	DTheta
+    ;STORE      DVel
 CheckStop:
-    IN		LVel
-    STORE	LeftVelocity
-    IN		RVel
-    ADD		LeftVelocity
-    JZERO	EndStop
-    JUMP	CheckStop
+	CALL	UpdatePosition
+    IN      LVel
+    STORE   LeftVelocity
+    IN      RVel
+    ADD     LeftVelocity
+    JZERO   EndStop
+    JUMP    CheckStop
     
-    LeftVelocity:	DW	0
+    LeftVelocity:   DW  0
 EndStop:
+    RETURN
+    
+WheelSpeed:     DW  0
+CurrentAngle:	DW	0
+
+UpdatePosition:
+    LOAD    WheelSpeed
+    STORE	DVel
+    LOAD	CurrentAngle
+    STORE	DTheta
+    CALL	ControlMovement
+    RETURN
+    
+DisplayPosition:
+    IN      XPOS        ; load x position
+    OUT     SSEG1       ; show on SSEG (first 4)
+    IN      YPOS        ; load in y position
+    OUT     SSEG2       ; Show on SSEG (second 4)
+    IN		THETA
+    OUT		LCD
     RETURN
 
 ;*************************************************************
@@ -189,7 +210,7 @@ EndStop:
 ;       Completely autonomous parking from start to finish
 ;*************************************************************
 AutomaticParking:
-	OUT		RESETPOS
+    OUT     RESETPOS		; reset the position
     IN      IR_LO
     STORE   SpotSelected
     XOR     Remote1
@@ -246,15 +267,16 @@ Spot7:
     JUMP    AutomaticManeuver
 
 AutomaticManeuver:
-	LOAD	SpotSelected
-	OUT		LCD			; showing spot selected on the LCD screen
+    LOAD    SpotSelected
+    OUT     LCD         ; showing spot selected on the LCD screen
     OUT     RESETPOS    ; resetting the position of the robot
     CALL    MoveFWD     ; moving forward
     
 CheckTurn1:
-    IN      XPos        ; reading in the position of the robot
-    OUT     SSEG1       ; outputting XPos to SSEG1 for debugging
-    SUB		FirstStraight        ; checking to see if it has gone 55 cm yet
+    CALL    UpdatePosition
+    CALL    DisplayPosition
+    IN      XPos
+    SUB     FirstStraight        ; checking to see if it has gone 55 cm yet
     JPOS    Turn1       ; if we have travelled 55cm, we are ready to turn
     JUMP    CheckTurn1  ; else, keep checking the distance travelled
     
@@ -265,9 +287,10 @@ Turn1:
     CALL    MoveFWD     ; moving forward
     
 CheckTurn2:
+    CALL    UpdatePosition
+    CALL    DisplayPosition
     IN      YPos        ; reading in the position of the robot
-    OUT     SSEG2       ; outputting YPos to SSEG2 for debugging
-    ADD    	SecondStraight	        ; checking to see if it has gone 105 cm yet (in the negative y direction)
+    ADD     SecondStraight          ; checking to see if it has gone 105 cm yet (in the negative y direction)
     JNEG    Turn2       ; if we have travelled 1010cm, we are ready to turn
     JUMP    CheckTurn2  ; else, keep checking the distance travelled
 
@@ -277,47 +300,45 @@ Turn2:
     
     CALL    MoveFWD     ; moving forward
 
-	LOADI   7
-	SUB     SpotSelected
-	OUT		SSEG2		; display on sseg1
-	STORE   m16sA
-	LOADI   366         ; width of each parking spot
-	STORE   m16sB
-	CALL    Mult16s
+    LOADI   7
+    SUB     SpotSelected
+    OUT     SSEG2       ; display on sseg1
+    STORE   m16sA
+    LOADI   366         ; width of each parking spot
+    STORE   m16sB
+    CALL    Mult16s
 
 CheckStopPoint:
-	IN      XPos        ; reading in the position of the robot
-	OUT     SSEG1       ; outputting XPos to SSEG1 for debugging
-
-	SUB     mres16sL
-	SUB		FirstStraight
-	SUB		FirstStraight
-	JPOS    Turn3
-	JUMP    CheckStopPoint
+    CALL    UpdatePosition
+    CALL    DisplayPosition
+    IN      XPos        ; reading in the position of the robot
+    SUB     mres16sL
+    SUB     FirstStraight
+    SUB     FirstStraight
+    JPOS    Turn3
+    JUMP    CheckStopPoint
 
 Turn3:
-	CALL    Stop
-	CALL    TurnRight
-	CALL    MoveFWD
-
+    CALL    Stop
+    CALL    TurnRight
+    CALL    MoveFWD
 
 CheckFinalStop:
-	IN      YPos        ; read xPos
-	OUT     SSEG1
-	ADD		SecondStraight
-	ADDI    456        ; distance bot should drive into each spot
-	JNEG    Finished
-	JUMP    CheckFinalStop
-
+    CALL    UpdatePosition
+    CALL    DisplayPosition
+    IN      YPos        ; read xPos
+    ADD     SecondStraight
+    ADDI    456        ; distance bot should drive into each spot
+    JNEG    Finished
+    JUMP    CheckFinalStop
 
 Finished:
-	CALL    Stop
-	
-	RETURN
-
-FirstStraight:	DW	&H1EC
-SecondStraight:	DW	&H3AA
+    CALL    Stop
     
+    RETURN
+
+FirstStraight:  DW  &H1EC
+SecondStraight: DW  &H3AA
 
 ;***************************************************************
 ;* Main code
@@ -328,13 +349,14 @@ Main:
     ; Before enabling the movement control code, set it to
     ; not start moving immediately.
     LOADI  0
+    STORE  CurrentAngle
     STORE  DVel        ; desired forward velocity
-    IN     THETA
+    IN     0
     STORE  DTheta      ; desired heading
     ; configure timer interrupts to enable the movement control code
     LOADI  10          ; 10ms * 10 = 0.1s rate, or 10Hz.
     OUT    CTIMER      ; turn on timer peripheral
-    SEI    &B0010      ; enable interrupts from source 2 (timer)
+    CLI    &B0010      ; enable interrupts from source 2 (timer)
     ; at this point, timer interrupts will be firing at 10Hz, and
     ; code in that ISR will attempt to control the robot.
     ; If you want to take manual control of the robot,
@@ -350,6 +372,7 @@ Main:
 
 ForeverReadRemote:
     CALL    ReadRemote
+    ;CALL   UpdateSpeed
     JUMP    ForeverReadRemote
 
 ForeverDisp:
