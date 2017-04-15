@@ -96,13 +96,13 @@ Execute6:
     CALL    TurnRight
     JUMP    EndReadRemote
 Execute7:
-    CALL    TurnPerp
+    CALL    CheckPerp
     JUMP    EndReadRemote
 Execute8:
     CALL    MoveBWD
     JUMP    EndReadRemote
 Execute9:
-    CALL   	AutoParallel
+    CALL   	CheckPara
     JUMP    EndReadRemote
 Execute0:
     CALL    AutomaticParking
@@ -220,6 +220,20 @@ DisplayPosition:
     IN		THETA
     OUT		LCD
     RETURN
+	
+CheckPara:
+	LOADI	&B00100000
+	OUT		SONAREN
+	CALL	Wait1
+	
+CheckSpotPara:
+	IN		DIST5
+	OUT		SSEG1
+	IN		DIST5
+	ADDI	-250
+	JNEG	SpotTaken
+	LOADI	&B00000000
+	OUT		SONAREN
     
 AutoParallel:
 	OUT     RESETPOS
@@ -237,6 +251,20 @@ CheckParallelDist:
 FinishParallel:
 	CALL	TurnLeft
 	RETURN
+	
+CheckPerp:
+	LOADI	&B00100000
+	OUT		SONAREN
+	CALL	Wait1
+	
+CheckSpotPerp:
+	IN		DIST5
+	OUT		SSEG1
+	IN		DIST5
+	ADDI	-300
+	JNEG	SpotTaken
+	LOADI	&B00000000
+	OUT		SONAREN	
 	
 TurnPerp:
 	OUT RESETPOS
@@ -376,11 +404,25 @@ CheckStopPoint:
     SUB     mres16sL
     SUB     FirstStraight
     SUB     FirstStraight
-    JPOS    Turn3
+    JPOS    CheckSpot
     JUMP    CheckStopPoint
+	
+CheckSpot:
+	CALL	Stop
+	LOADI	&B00100000
+	OUT		SONAREN
+	CALL 	Wait1
+	
+CheckSpotContinue:
+	IN		DIST5
+	OUT		SSEG1
+	IN		DIST5
+	ADDI	-390
+	JNEG	SpotTaken
+	LOADI	&B00000000
+	OUT		SONAREN
 
 Turn3:
-    CALL    Stop
     CALL    TurnRight
     CALL    MoveFWD
 
@@ -461,6 +503,11 @@ Continue:
 	LOAD	BeforeStopAngle
 	STORE	CurrentAngle
 	RETURN
+	
+SpotTaken:
+	LOADI	&B00000000
+	OUT		SONAREN
+	JUMP	Stop
 	
 AbortMission:	DW	0
 
