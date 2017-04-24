@@ -167,11 +167,10 @@ TestAngle:
     RETURN
 
 MoveFWD:
-    LOAD    FSlow    	;load in FWD
-    STORE   WheelSpeed
+    LOAD    	FSlow    	;load in FWD
+    STORE   	WheelSpeed
     IN		THETA
     STORE	CurrentAngle
-    ;STORE      DVel
     RETURN
 
 MoveBWD:
@@ -179,7 +178,6 @@ MoveBWD:
     STORE   WheelSpeed
     IN		THETA
     STORE	CurrentAngle
-    ;STORE      DVel
     RETURN
 
 Stop:
@@ -187,7 +185,6 @@ Stop:
     STORE   WheelSpeed
     IN		THETA
     STORE	DTheta
-    ;STORE      DVel
 CheckStop:
 	CALL	UpdatePosition
     IN      LVel
